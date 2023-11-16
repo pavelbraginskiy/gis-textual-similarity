@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     print("CPD: ", similarity.cpd(a_sample, b_sample))
     print("SPD: ", similarity.spd(a_sample, b_sample))
-    print("DTW: ", similarity.cpd(a_sample, b_sample))
+    print("DTW: ", similarity.dtw(a_sample, b_sample))
     print("LCSS, e=0.5: ", similarity.lcss(a_sample, b_sample, 0.5))
     print("LCSS, e=1: ", similarity.lcss(a_sample, b_sample, 1))
     print("LCSS, e=2: ", similarity.lcss(a_sample, b_sample, 2))
