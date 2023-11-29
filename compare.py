@@ -1,31 +1,46 @@
-import cProfile
-
+import itertools
+from collections import namedtuple
+import pprint
 import parse
 import vectorize
 import sys
-import similarity
+import TrajectoryDistance
+import glob
+
 
 if __name__ == '__main__':
-    doc_a = parse.paragraphs(sys.argv[1])
-    doc_b = parse.paragraphs(sys.argv[2])
+    files = glob.glob('books/**/*.txt', recursive=True)
+    if len(sys.argv) > 1 and sys.argv[1] == '--train':
+        vectorize.initialize(itertools.chain.from_iterable((parse.paragraphs(file)) for file in files))
+        exit(0)
 
-    vectorize.initialize([*doc_a, *doc_b])
+    trajectories = {file: vectorize.vectorize(parse.paragraphs(file)) for file in files}
 
-    a = vectorize.vectorize(doc_a)
-    b = vectorize.vectorize(doc_b)
+    sample_size = (min(len(i) for i in trajectories.values()) - 10) // 2
 
-    s = 25  # size of sample from text
+    sampled = {file: trajectories[file][len(trajectories[file])//2-sample_size:len(trajectories[file])//2+sample_size]
+               for file in files}
 
-    a_sample = a[len(a) // 2 - s:len(a) // 2 + s]
-    b_sample = b[len(b) // 2 - s:len(b) // 2 + s]
+    trajectories = sampled
 
-    print("CPD: ", similarity.cpd(a_sample, b_sample))
-    print("SPD: ", similarity.spd(a_sample, b_sample))
-    print("DTW: ", similarity.dtw(a_sample, b_sample))
-    print("LCSS, e=0.5: ", similarity.lcss(a_sample, b_sample, 0.5))
-    print("LCSS, e=1: ", similarity.lcss(a_sample, b_sample, 1))
-    print("LCSS, e=2: ", similarity.lcss(a_sample, b_sample, 2))
-    print("EDR, e=0.5: ", similarity.edr(a_sample, b_sample, 0.5))
-    print("EDR, e=1: ", similarity.edr(a_sample, b_sample, 1))
-    print("EDR, e=2: ", similarity.edr(a_sample, b_sample, 2))
-    print("ERP: ", similarity.erp(a_sample, b_sample))
+    print(trajectories.keys())
+
+    Result = namedtuple('Result', 'dtw erp')
+    results = {}
+
+    for i in files:
+        for j in files:
+            if i == j or (i, j) in results or (j, i) in results:
+                continue
+            dtw = TrajectoryDistance.dtw(trajectories[i], trajectories[j])
+            print(f'{i} <==> {j}, DTW: {dtw}')
+            erp = TrajectoryDistance.erp(trajectories[i], trajectories[j])
+            print(f'{i} <==> {j}, ERP: {erp}')
+
+            results[(i, j)] = Result(dtw, erp)
+
+    print('\n\n')
+    print('=' * 40)
+    print('\n\n')
+    pp = pprint.PrettyPrinter(depth=4)
+    pp.pprint(results)
