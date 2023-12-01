@@ -6,7 +6,7 @@ import vectorize
 import sys
 import TrajectoryDistance
 import glob
-
+import csv
 
 if __name__ == '__main__':
     files = glob.glob('books/**/*.txt', recursive=True)
@@ -44,3 +44,22 @@ if __name__ == '__main__':
     print('\n\n')
     pp = pprint.PrettyPrinter(depth=4)
     pp.pprint(results)
+
+    with open('results.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, dialect='excel')
+        writer.writerow([''] + files)
+
+        for method in (lambda i: i.dtw, lambda i: i.erp):
+            for i in files:
+                row = [i]
+                for j in files:
+                    if i == j:
+                        row += ['']
+                    else:
+                        if (i, j) in results:
+                            entry = results[(i, j)]
+                        else:
+                            entry = results[(j, i)]
+                        row += [method(entry)]
+                writer.writerow(row)
+            writer.writerow([])
